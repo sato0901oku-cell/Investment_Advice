@@ -62,7 +62,7 @@ Node試験の標準完全入口は`ゲーム本体/node-server`で`npm test`（�
 - 計画では既知の変更予定ファイルを列挙したうえで、主要変更との直接依存があり、既存の不変条件と期待結果を変えずに追随させられる試験fixture、静的契約、必須ファイル一覧などを「条件付き随伴範囲」として事前定義できる。該当する機械的更新は計画内とし、実際のパスと直接依存の根拠を`作業用/進行中の作業.md`へ記録して候補に含める。
 - 製品コード、仕様、API、セーブ、完了条件、試験の期待結果を変える変更、直接依存を説明できない変更、または随伴更新を起点に別責務へ広がる変更は条件付き随伴範囲に含めない。計画・差分レビュー担当による再判定と、必要なユーザー判断を得る。
 - 抽出、移設、削除、名称変更を計画する場合は、旧シンボル・旧パス・直接呼出しだけでなく、ソース文字列assert、`app.js`等の部分評価fixture、PowerShell静的契約、必須ファイル一覧、技術資料の経路表を`rg`等で事前に探索する。判明したファイルは条件付き扱いにせず既知の変更予定ファイルへ加える。
-- `npm run test:affected -- --list --planned-path`は実行すべき試験を選ぶための影響規則であり、編集が必要な依存ファイルの発見を保証しない。参照探索の代用にせず、最終候補の完了検査の代用にもしない。
+- 既知パスの列挙後、`ゲーム本体/node-server`で`npm run test:affected -- --list --planned-path <リポジトリ相対パス>`を各パスに指定し、適用規則・選択範囲・完全フォールバックを検査計画へ記録する。未知パス、想定外の完全フォールバック、影響拡大があれば承認前に範囲または分割を見直す。これは試験の選択だけであり、依存ファイルの探索も最終候補の完了検査も代用しない。
 
 ### 自動試験を追加・維持する基準
 
@@ -71,16 +71,21 @@ Node試験の標準完全入口は`ゲーム本体/node-server`で`npm test`（�
 - 高リスク変更では、主要な失敗モードから見落としやすい誤実装を一つ選び、どの観測で検出できるか確認する。検出力を判断しにくい場合は故障注入や一時変異を使えるが、その確認を恒久試験として残すのは、重要で再発しやすい誤実装を継続検出する必要がある場合だけとする。
 - 試験数や実行時間だけを理由に試験を削除しない。同じ契約をより直接に保証する試験が別にあると確認できた場合だけ、統合または削除する。
 
+- エンディングの責務検査は、設定正規化・編集を`browser-adventure-configuration`／`browser-adventure-settings`、確定値判定・総括後の明示開始・連打・旧応答・再試行／省略を`browser-story-choices`、厳格入力と応答・共有再送・取消を`api-gameplay`、実HTTPモックと使用量を`gameplay-api-integration`、実ブラウザ出力の各安定状態からv24保存・再読込・同一要求再送を`persistence-integration`が担当する。3択のシステム向け文脈と場面確定後の人物経験の境界は`api-gameplay`、`browser-chat-request`、`chat-prompt`で直接観測する。実Grokの確率的描写は保証対象外。
+
 ### 横断契約の計画と観測
 
 - データの作成・受理・変換・適用条件を変える場合は、影響する受渡しで前段の出力と後段の受理条件（文字・長さ・件数・順序・重複）を照合する。編集中と確定時などの意図した差は一律に揃えず、必要な変換・拒否の責務を確認する。同じ条件は責務境界を崩さない範囲で共用し、共用が不適切な場合は同じ代表データで実装間の整合を検査する。
 - 接続を保証する試験では、対象となる実処理の出力を次の実処理へ渡して結果を確認し、途中を手作りの正常値へ差し替えて接続保証の代わりにしない。外部APIは従来どおりモックを使い、未確認の境界は保証に含めない。
 - 上記は変更の影響範囲に適用し、該当する送信・反映・保存・再読込の観測を既存の検査計画・対応表へ組み込む。毎回の全体調査・全経路試験・新しい帳票は求めず、既存試験が直接保証していれば追加不要とする。完了検査の選択は「変更リスクと完了検査」に従う。
-- 高リスク・横断・未知変更の計画では、「状態の所有者 × 入口・利用先 × 観測方法」の対応表を作る。重要な状態・データ・不変条件ごとに、正本、作成・変更入口、読取・送信・表示・保存先、取消・失敗・競合時の扱い、期待結果を直接確認する自動試験または実機手順を追跡する。試験名とともに判定する状態・引数・順序などの観測結果を記載する。非該当は未検討と区別し、同内容の別表は作らない。
+- 高リスク・横断・未知変更の計画では、重要な状態・データ・不変条件ごとに、正本、作成・変更入口、読取・送信・表示・保存先、取消・失敗・競合時の扱い、期待結果と直接の観測方法を追跡できるように記載する。試験名だけでなく判定する状態・引数・順序等を示し、非該当と未検討を区別する。表、箇条書き、既存の受入シナリオから適切な形式を選び、同じ対応関係を別表へ重複させない。
 - 保存形式、API必須項目、共通状態を変更する場合は、全送信元、受信・検証先、実行時利用先、保存・一覧、試験fixture、PowerShell実HTTP試験、ユーザー向け資料を同じ契約の連動先として扱う。
 - 純粋なモジュール試験は状態変換、アプリ接続試験は`app.js`等の配線、実HTTP試験は直列化後の要求とサーバー契約、保存試験は再読込、実機手順は画面到達性と利用者が観察できる結果を受け持つ。一つの層の合格を別の層の接続保証として代用しない。試験名や合格件数だけでなく、期待結果を直接判定するassertまたは観測箇所を確認する。
-- 取消、検証失敗、競合、再読込、部分適用防止の受入シナリオは、開始状態、操作順、観察対象、保持すべき状態、変化すべき状態を具体的に記載する。実機項目は現在の画面から到達できる操作だけで再現できることを条件とする。
+- 取消、検証失敗、競合、再読込、部分適用防止の受入シナリオは、開始状態、操作順、観察対象、保持すべき状態、変化すべき状態を具体的に記載し、操作前後で保持すべき全状態を比較する。実機項目は現在の画面から到達できる操作だけで再現できることを条件とする。
 - 状態制御は成功・途中失敗・取消・旧処理の遅延完了などの順序を、自然言語判定は肯定・拒否・混在などの代表入力と期待判定を、必要に応じて状態遷移表・入力分類表で整理する。対象とリスクに応じて既存の対応表やシナリオで十分なら別表は不要であり、全作業へ一律に義務化しない。回帰用の個別例は対象の自動試験へ残し、恒久資料へ大量に複製しない。
+
+- 時刻付き状態・非同期・外部副作用を変更または指摘する場合は、状態の作成・更新・失効時刻、待機・時計変更の処理位置を具体化する。複数の期限・世代・再送キャッシュ・保留結果では、一方だけが失効し他方が有効な組合せも確認する。外部処理の所要時間は、要求前だけでなく模擬外部処理の内部など実際に起点が分かれる位置で時計を進めて再現する。課金・外部副作用では成功、同一本文・異なる本文、期限ずれについて、外部呼出回数、保存回数、結果ID、エラーコード、元状態の維持をassertする。
+- 指摘の再現条件には、開始状態、操作順、修正前の観測値、修正後の期待結果を示す。非同期・時刻境界の指摘では、該当する各状態の期限がずれる順序と維持・拒否すべき対照ケースも示し、「境界を越える」「期限内」だけにしない。再現試験を追加できる場合は修正前の原因経路で失敗する条件を保って修正後の合格を確認する。指定された時刻・非同期段階の簡略化で再現条件が変わる場合、実装担当は独自に置き換えず計画・差分レビュー担当へ戻す。
 
 ### 最終候補と検査結果の同一性
 
@@ -112,15 +117,12 @@ Node試験の標準完全入口は`ゲーム本体/node-server`で`npm test`（�
 
 ### 変更後の基本確認
 
-1. 変更前に作業規模、調査必要性と、「内部文書だけ」「影響範囲が明確な通常変更」「高リスク・横断・未知変更」の変更リスクを別々に分類する。計画を作成する変更では既知の変更予定ファイルと必要な条件付き随伴範囲を定め、抽出・移設等では参照探索を行った後に`npm run test:affected -- --list --planned-path <リポジトリ相対パス>`を各既知パスについて指定する。適用規則、選択範囲、完全フォールバックを確認して完了検査を計画へ記載する。予定パス判定は依存ファイル探索も最終候補の完了検査も代用しない。
-2. 内部文書だけの変更は、文書間と現行実装との意味上の一致、記載したパス・コマンドの実在、差分空白、レビュー候補を確認する。アプリのコード・設定・素材を読み込む自動試験は原則実行しない。
-3. 実装中は直接対象試験、構文・設定検査、必要な非`all`領域を使う。影響範囲が明確な通常変更は、固定した初回の最終候補に`npm run test:affected`を使用する。必要に応じて直接対象試験・非`all`領域を追加し、低速試験を除くNode試験を広めに確認したい場合だけ`npm run test:fast`を使用する。
-4. レビュー指摘後の局所修正は、条件を満たす場合、直前候補の完了検査と今回差分の増分検査を優先して組み合わせる。限定条件を満たさない場合だけ候補全体を再分類して必要な完了検査をやり直す。
-5. 高リスク・横断・未知変更は、固定した初回の最終候補について、関係する場合にプロジェクトルートで`powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\ゲーム本体\validate-project.ps1"`を実行し、標準全体検査として`powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\ゲーム本体\test-game.ps1" -Area all`を1回実行する。`-Area all`はNode全件を内包するため、別途`npm test`を重ねない。
-6. Node試験の並列入口・資源隔離を変更する場合、または並列時の不安定性を調査する場合だけ、追加で4ファイルの並列数2連続10回、`npm run test:serial`、`npm run test:slow`を実行する。
-7. UI変更時は、`作業用/実機確認チェックリスト.md`から該当IDを選び、PCとiPhoneで必要な実機確認を行う。
-8. Grok・NovelAIの実通信が必要な変更だけ、ユーザーがその作業で許可した範囲で実API確認を行う。
-9. 役割分担時は、候補一覧更新、一覧のファイルだけの個別ステージ、候補定型検査、基準HEADと`git write-tree`のtree ID記録、完了検査の順に進める。検査後も候補定型検査とtree IDが一致することを確認してからレビューへ渡す。同じ候補に有効な合格結果がある場合は再実行しない。
+1. 計画時は作業規模・調査必要性と変更リスクを分け、[計画範囲と条件付き随伴ファイル](#計画範囲と条件付き随伴ファイル)に従って参照探索と予定パス判定を行う。結果を検査計画へ記録する。
+2. 実装中と候補固定後の検査は[変更リスクと完了検査](#変更リスクと完了検査)で選ぶ。内部文書だけの場合は意味・参照・差分確認を行い、アプリ検査は原則不要。Node試験を低速試験以外まで広めに確認したい場合だけ`npm run test:fast`を使う。
+3. 高リスク・横断・未知変更は、固定した初回の最終候補について、関係する場合にプロジェクトルートで`powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\ゲーム本体\validate-project.ps1"`を実行し、標準全体検査として`powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\ゲーム本体\test-game.ps1" -Area all`を1回実行する。`-Area all`はNode全件を内包するため、別途`npm test`を重ねない。
+4. Node試験の並列入口・資源隔離を変更する場合、または並列時の不安定性を調査する場合だけ、追加で4ファイルの並列数2連続10回、`npm run test:serial`、`npm run test:slow`を実行する。
+5. UI変更時は`作業用/実機確認チェックリスト.md`から該当IDと必要な端末を選ぶ。実通信が必要な場合もGrok・NovelAIの許可は作業ごとのユーザー指示に従う。
+6. 引継ぎ前は[最終候補と検査結果の同一性](#最終候補と検査結果の同一性)に従って固定・検査・同一性再確認を行う。指摘修正時は[増分検査](#レビュー指摘後の増分検査)の適用条件を確認し、同じ候補の有効な完了検査を繰り返さない。
 
 ### 試験の構成・保証範囲
 
@@ -145,11 +147,11 @@ Node試験の標準完全入口は`ゲーム本体/node-server`で`npm test`（�
 
 後始末は単一の実`after`で登録資源を逆順にawaitし、その後だけ専用ディレクトリを削除する。所有登録はmkdirより前、runtime停止登録は起動成功直後であり、HTTP起動失敗でも停止する。停止失敗は他の停止も試してAggregateErrorを返し、保存物を保持する（成功扱いにしない）。削除時も絶対パスが`data/test-runs`の子孫であることを再検証する。再起動時の明示的停止は個別試験に残す。全体検査は下記の全領域入口を使い、Node試験だけでPowerShell領域を代替しない。
 
-- 強制デモモードと隔離データを使用し、主要API、全キャラクター、3モード、2人シーン、`/api/chat`の完全な人物一覧・人物別状態と旧1人要求の拒否、アドベンチャーモードのカタログCRUD・1～10ブロック編集・行動候補・指定／自動遭遇・3択・終了結果・日替わり・設定スナップショット、共有ワールドラインの人物別選別、固定世界観・モード区分別の中期・重要記憶、世界線共通の世間の出来事、5往復要約・共同要約・失敗再送、プレイヤープロフィール、未設定関係性、20歳境界、方向付きキャラクター間関係性、全人物の短い話題参照一覧、`@`候補の一意名・非参加・最大2人解決、選択外人物の基本設定・趣味／関心だけの限定話題参照と不正指定拒否、現実時間連動、主・追加人物の交代、再送、最新1往復、現行v23セーブの通常／アドベンチャー分離・行動選択・結果状態・現行v23受理とv22以下拒否、単一世界観検証、通常・追加要望つきシーン画像モック、アルバムの新旧順・お気に入り保存／復旧・絞り込み・削除保護・安全停止、生成画像の完全削除、HTTP防御を課金なしで検査する。
+- 強制デモモードと隔離データを使用し、主要API、全キャラクター、3モード、2人シーン、`/api/chat`の完全な人物一覧・人物別状態と旧1人要求の拒否、アドベンチャーモードのカタログCRUD・1～10ブロック編集・行動候補・指定／自動遭遇・3択・終了結果・日替わり・設定スナップショット、共有ワールドラインの人物別選別、固定世界観・モード区分別の中期・重要記憶、世界線共通の世間の出来事、5往復要約・共同要約・失敗再送、プレイヤープロフィール、未設定関係性、20歳境界、方向付きキャラクター間関係性、全人物の短い話題参照一覧、`@`候補の一意名・非参加・最大2人解決、選択外人物の基本設定・趣味／関心だけの限定話題参照と不正指定拒否、現実時間連動、主・追加人物の交代、再送、最新1往復、現行v24セーブの通常／アドベンチャー分離・行動選択・結果状態・現行v24受理とv23以下拒否、単一世界観検証、通常・追加要望つきシーン画像モック、アルバムの新旧順・お気に入り保存／復旧・絞り込み・削除保護・安全停止、生成画像の完全削除、HTTP防御を課金なしで検査する。
 - 視覚遷移の純粋処理は`node-server/test/visual-transitions.test.js`で、設定版・ID・表示名由来語彙・追加別名の検証、直接依頼と質問・引用・否定・仮定・予定・移動途中の区別、1人／2人の対象解決、複数候補、未登録・使用不可・細部変更、服装と背景の独立判定、自然文食い違いの高確度検出を確認する。サーバー会話入力検証の分離は`node-server/test/chat-validation.test.js`で、`chat.js`とのexport同一性、代表要求の主要な正規化結果、サーバー生成計画のfreeze、ブラウザ指定計画の拒否、JSON直列化後のrequestId、入力非破壊、エラー分類・原因・検証順を確認する。実`POST /api/chat`との接続と公開400コードは`gameplay-api-integration.test.js`で確認する。
 - サーバー会話応答処理の分離は`node-server/test/chat-response.test.js`で、`chat.js`とのexport同一性、代表Schemaの人物数・視覚遷移許可集合・背景・記憶操作・物語項目、解析時の許可集合再検証、受理・補正・拒否、主要freeze対象、入力非破壊、書記素単位の文字数制限、実`createGrokGameplayService.chat`から実builder・parserまでの接続、自然文食い違い診断の安全項目と応答不変、接続確認マークの更新順を確認する。デモ応答の分離は`node-server/test/chat-demo.test.js`で、固定乱数による通常・自由対話・1人／2人scene、実Grok経路と共通の視覚遷移計画、表情規則適用と許可素材への復帰、表示名・ユーザー名、物語境界、乱数呼出し回数、入力非破壊を確認する。恒久試験の保証範囲は各assertの観測点とする。
 - サーバー会話プロンプト構築の分離は`node-server/test/chat-prompt.test.js`で、`chat.js`とのexport同一性、通常・自由対話・1人／2人sceneと物語の代表分岐、人物・関係性・記憶・出来事・話題参照・現実時間・中期記憶・視覚遷移制約の所属と節順、先頭3 systemメッセージのバイト単位安定性、要求全体の縮小、返却プロパティとSchema、入力非破壊、履歴上限・順序・場面時刻境界、世界観・モデル・最大トークン数の次要求への反映、実`createGrokGameplayService.chat`との接続を確認する。恒久試験の保証範囲は各assertの観測点とする。実`POST /api/chat`から入力検証・サービス・ローカルGrokモック・解析・安全な診断・再試行までの接続は`gameplay-api-integration.test.js`を再利用する。
-- 記憶Schemaの人物別既存ID・分類・上限到達時の削除後追加は`chat-response.test.js`、実Grok要求body内のモード別候補は`chat-prompt.test.js`で確認する。`browser-important-memory-state.test.js`は実サーバー検証値と共有・単独操作の配列順、途中拒否、ID・時計の副作用を比較する。`browser-chat-flow.test.js`は実メモリ部品と実`chat-request.js`を接続し、会話の一括確定・保持要求の再送・最新往復のやり直しから次のPOST本文までを観測する。`gameplay-api-integration.test.js`はローカルGrokモックへの現在記憶Schema、正規化済み共有更新のブラウザ確定とv23保存読込後の要求接続、記憶更新不正時の502・診断1件・秘密情報不在・診断保存失敗時の元エラー維持を観測する。実APIのSchema受理と確率的出力は自動試験の保証範囲外とする。
+- 記憶Schemaの人物別既存ID・分類・上限到達時の削除後追加は`chat-response.test.js`、実Grok要求body内のモード別候補は`chat-prompt.test.js`で確認する。`browser-important-memory-state.test.js`は実サーバー検証値と共有・単独操作の配列順、途中拒否、ID・時計の副作用を比較する。`browser-chat-flow.test.js`は実メモリ部品と実`chat-request.js`を接続し、会話の一括確定・保持要求の再送・最新往復のやり直しから次のPOST本文までを観測する。`gameplay-api-integration.test.js`はローカルGrokモックへの現在記憶Schema、正規化済み共有更新のブラウザ確定とv24保存読込後の要求接続、記憶更新不正時の502・診断1件・秘密情報不在・診断保存失敗時の元エラー維持を観測する。実APIのSchema受理と確率的出力は自動試験の保証範囲外とする。
 - 会話API入口の分離は`node-server/test/api-chat.test.js`で、実`createGameApiHandler`から分離ハンドラー・入力検証・デモ処理・実再送キャッシュへの接続、対象外経路、複数不正条件と再送参照を含む公開エラーの優先順、失敗時の原因・詳細、要求IDあり／なし、生本文指紋、完了再送・同時共有・競合・失敗後再試行・容量超過、購読者と共有処理の取消信号、既存`getGrokFailureCode` exportの同一性を確認する。実サービスとローカルHTTPのGrokモック接続は`gameplay-api-integration.test.js`、再送キャッシュ単体の境界は`grok-client-integration.test.js`を併用する。
 - 物語・中期記憶・プロンプト診断API入口の分離は`node-server/test/api-gameplay.test.js`で、実`createGameApiHandler`と実入力検証・実再送キャッシュへの接続、対象外経路、遭遇の非再送、候補・要約・診断の完了再送・同時共有・全購読者取消・失敗後再操作・容量超過、生本文または正規化本文による競合判定、検証優先順、経路固有の失敗原因・詳細、診断時点の世界観と人物カスタマイズ反映を確認する。実サービスとローカルHTTPのGrokモック接続は`gameplay-api-integration.test.js`を併用する。
 - 画像API入口の分離は`node-server/test/api-scene-images.test.js`で、実`createGameApiHandler`と実画像入力検証・実再送キャッシュへの接続、読取先行・対象外経路、生成の検証順・生本文指紋・二段再送キー・成功時のプロンプト再送削除順、完了再送・同時共有・全購読者取消・失敗後再操作・容量超過、画像固有の失敗分類、お気に入り・完全削除の引数・完了待ち・ストア失敗を確認する。実生成サービス・ストアとローカルHTTP画像モックの接続は`scene-image-api-integration.test.js`を併用する。
@@ -189,6 +191,7 @@ Node試験の標準完全入口は`ゲーム本体/node-server`で`npm test`（�
 | `/api/chat` | POST／200 | 405 `chat_method`、入力400 | `api/chat.js` | `api-chat.test.js`「the real game handler returns...」「chat method, JSON...」 |
 | `/api/story/encounter` | POST／200 | 405 `story_method`、入力400 | `api/story.js` | `api-gameplay.test.js`「the real game handler connects encounter...」「gameplay routes preserve validation order...」 |
 | `/api/story/options` | POST／200 | 405 `story_method`、入力400 | `api/story.js` | 同上、同ファイルの再送・取消・容量試験 |
+| `/api/story/ending` | POST／200 | 405 `story_method`、入力400、不正Grok応答502、異本文再送409 | `api/story.js` | `api-gameplay`の固定入力・応答・共有再送・取消・容量、`gameplay-api-integration`の実HTTP・使用量 |
 | `/api/medium-memories/summarize` | POST／200 | 405 `medium_memory_method`、入力400 | `api/medium-memory.js` | `api-gameplay.test.js`の実入口、拒否、再送各試験 |
 | `/api/prompt-diagnostics/review` | POST／200 | 405 `diagnostics_method`、Grokなし409 `diagnostics_grok_required` | `api/prompt-diagnostics.js` | `api-gameplay.test.js`「diagnostic validation keeps...」「diagnostics reads the current world registry...」 |
 | `/api/scene-images/generate` | POST／200 | 405 `scene_image_method`、未設定409 `scene_image_not_configured` | `api/scene-images.js` | `api-scene-images.test.js`の生成・拒否・失敗・再送試験 |
@@ -201,7 +204,7 @@ Node試験の標準完全入口は`ゲーム本体/node-server`で`npm test`（�
 
 世界観一覧・アドベンチャー設定一覧・通常チャット用カスタマイズ設定一覧・セーブ・画像のGETは`game-api.js`の先頭にある`read-only.js`が更新ハンドラーより先に処理し、世界観1件の編集可否GETは参照検査を行う`api/worlds.js`が処理する。`api-updates.test.js`は実`createGameApiHandler`で読取先行、世界観編集可否・更新、カスタマイズ設定更新の応答待機、未知経路の未処理を確認する。読取ハンドラーは更新側の`try`外にあるため、その例外は同一のまま伝播する一方、世界観編集可否と更新側の`OperationError`だけを`game-api.js`が`HttpError`へ変換する。アドベンチャー設定は`adventure-settings.test.js`、通常チャット用設定は`chat-customization-settings.test.js`で、実`createGameApiHandler`を経由する一覧取得・CRUD・競合・不正設定拒否と保存復旧を確認する。
 
-`/api/chat`と`/api/story/options`は`secretProfile`を必須として共通domainで検証し、不正値を外部通信前に400で拒否する。`/api/adventure-settings`の更新は設定v2の秘密を検証し、不正設定を422で拒否する。`/api/saves`更新・読込はv23の秘密を含む正本を扱い、旧v22は読込不可とする。各経路の入口試験に加え、`secret-profile.test.js`、`chat-prompt.test.js`、`persistence-integration.test.js`が人物別投影・永続化を直接確認する。
+`/api/chat`と`/api/story/options`は`secretProfile`を必須として共通domainで検証し、不正値を外部通信前に400で拒否する。`/api/adventure-settings`の更新は設定v3の秘密を検証し、不正設定を422で拒否する。`/api/saves`更新・読込はv24の秘密を含む正本を扱い、旧v23は読込不可とする。各経路の入口試験に加え、`secret-profile.test.js`、`chat-prompt.test.js`、`persistence-integration.test.js`が人物別投影・永続化を直接確認する。
 
 アドベンチャー設定の`<settingId>`は、生成形式`adventure-setting-<14桁数字>-<8桁の小文字16進数>`に一致するIDだけを経路で受理する。`standard`や形式不正なIDはこの経路へ一致せず404となる。
 
@@ -228,7 +231,7 @@ Node試験の標準完全入口は`ゲーム本体/node-server`で`npm test`（�
 - 影響計画の`characterLifecycleRequired`は、関連規則が一つでもあれば`true`、明示的な無関係規則だけなら`false`、未指定・広い規則を含み関連規則がなければ`null`とする。内部文書は合成から除き、完全フォールバックは`true`とする。`false`、完全フォールバックなし、最終領域が`chat-memories`以後の三条件が揃う場合だけ、表示・実行で共通のPowerShell引数へ`-SkipCharacterLifecycleTests`を付ける。欠損した要否値を`false`と推定しない。
 - `config/visual-transitions.json`、`config/demo-rules.json`、`domain/visual-transitions.js`の変更は、`visual-transitions`と会話入力・応答・デモ・プロンプト・実HTTP接続試験、設定素材検査、会話領域へ明示接続する。視覚遷移設定だけの変更を未知パス扱いにせず、設定検証と利用側の両方を選ぶ。
 - `world-settings.js`の変更では、`browser-world-settings.test.js`、`browser-adventure-settings.test.js`、`browser-save-reset.test.js`、`browser-story-choices.test.js`を含む`browser-world-settings`規則を選ぶ。`adventure-settings.js`単独の変更では物語・記憶・セーブの既存試験集合を選ぶ`browser-story`規則を使い、`browser-world-settings.test.js`は選ばない。開始候補を接続する`app.js`の変更は`browser-app-cross-cutting`規則により完全Node試験・設定素材検査・`grok-network`までへフォールバックする。世界観削除の共有操作権、削除失敗時の不変、開始設定カタログの無効化・再取得、画像待機中に失われた開始候補、物語開始入口の拒否は、それぞれの規則で選ばれる実部品接続試験で確認する。
-- `chat-customization-draft.js`、`chat-customization-settings.js`と三文脈を接続する既存カスタマイズ各controllerの変更は`browser-chat-customization`規則で、直接試験に加えて人物セッション、人物確定・初期化、ロード、世界観連携、静的契約を選ぶ。直接試験は、利用可能項目の反映後も利用不能な人物・背景・立ち絵参照と不足記憶が保持され、明示修復時だけ除去・初期化されること、実行中射影が全人物・固定世界観の両記憶区分を副作用なく複製すること、プレイ中に読込を出さず保存済み編集を実行中世界線から分離することも確認する。`character-visuals.js`では同直接試験も選び、下書きの使用素材に対する厳格画像準備を確認する。`chat-start-flow.js`単独変更は専用`browser-chat-start-flow`規則で、公開入口、保存・ロード、既存カスタマイズ、世界観、静的契約の6試験と`saves`までを選ぶ。初期下書き・編集済み下書きからの開始、厳格画像、失敗復元と取消は新フローの直接試験、v23投影は`browser-save-reset.test.js`が観測する。
+- `chat-customization-draft.js`、`chat-customization-settings.js`と三文脈を接続する既存カスタマイズ各controllerの変更は`browser-chat-customization`規則で、直接試験に加えて人物セッション、人物確定・初期化、ロード、世界観連携、静的契約を選ぶ。直接試験は、利用可能項目の反映後も利用不能な人物・背景・立ち絵参照と不足記憶が保持され、明示修復時だけ除去・初期化されること、実行中射影が全人物・固定世界観の両記憶区分を副作用なく複製すること、プレイ中に読込を出さず保存済み編集を実行中世界線から分離することも確認する。`character-visuals.js`では同直接試験も選び、下書きの使用素材に対する厳格画像準備を確認する。`chat-start-flow.js`単独変更は専用`browser-chat-start-flow`規則で、公開入口、保存・ロード、既存カスタマイズ、世界観、静的契約の6試験と`saves`までを選ぶ。初期下書き・編集済み下書きからの開始、厳格画像、失敗復元と取消は新フローの直接試験、v24投影は`browser-save-reset.test.js`が観測する。
 - `chat-validation.test.js`、`chat-response.test.js`、`chat-prompt.test.js`、`chat-demo.test.js`のruntime fixtureは、各テストケースで`data/test-runs`配下の一意所有ルート、`unusedPort()`のloopbackポート、`persistenceArguments()`の8保存先を使い、`bootstrapOwnedRuntime()`へ接続する。外部API終了をawaitしてから所有ルートだけを削除し、本番保存先と固定8788へ接続しない。これら4ファイルを並列数2で実行しても試験単位の資源が干渉しないことを標準契約とする。
 - 通常の領域別ブラックボックス試験は`test-game.ps1 -Area <領域名>`で行う。隔離データ、デモ応答、画像モックだけを使用し、本番データと実APIへ接続しない。`test-game.ps1`は先頭領域の見出し直後にNode全件を固定並列数2で1回実行してから、指定領域までを従来順に確認する。開発中に非`all`領域だけを反復する場合は`-SkipNodeUnitTests`を指定できるが、Node全件を省略した結果は完全検査として扱わない。`-Area all -SkipNodeUnitTests`は試験開始前に終了1で拒否する。
 - 軽量な`03-configuration-assets.ps1`は人物・サムネイル・人格の実サーバー確認と、設定、世界観、背景、BGMの検査を所有し、後続へ共有する設定・人物・世界観・背景の値を維持する。`03-character-lifecycle.ps1`は同じPowerShellスコープと隔離データで人物パッケージ、反映、登録解除を確認し、後続へ状態を渡さない。進行役は軽量03の直後、同じ領域の時間計測内で補助検査を一度だけ呼び、失敗時も既存の`finally`清掃を行う。有効な省略時は`[SKIP-CHARACTER-LIFECYCLE]`を表示する。
@@ -238,13 +241,16 @@ Node試験の標準完全入口は`ゲーム本体/node-server`で`npm test`（�
 
 `browser-app-dialogs.test.js`は実共通部品と実dialogFocusで未解決待機・結果一回・4取消経路・Abort・親終了／再表示・通知FIFO／待ち失効・古いクリック／close／画像イベント・表示失敗・有効な復帰先を観測する。実appの組立てから同じserviceを3つの実controllerへ渡し、ゲーム内削除の通信まで通す。`browser-save-data`は実部品からスロット操作の副作用・revision・取消／失効・保存読戻しへ、`browser-save-load`は実app配線から実save-flow・画像準備・成功／失敗・予備通知の所有権解放順へ接続する。`browser-image-deletion`は4入口の確定前DELETE0・承認ID・取消・対象／一覧／選択失効と既存の完全削除応答・再試行・混合結果を観測する。
 
-`browser-audio`は実共通部品の確認・通知の開閉中もON/OFF、希望曲、実曲、再生位置、play/pause/resume回数が不変であることを模擬Audio上で確認する。実音、端末のTab閉じ込め、iPhoneキーボード、狭幅レイアウトは代役試験で保証せず、実機チェックリストA-12/B-03/B-04/E-06/F-13/G-09で別に観測する。`app-dialogs.js`単独変更は専用影響規則で全Node・設定素材・全領域を選び、未知ブラウザ規則と重複しない。
+`browser-prompt-diagnostics`は実appの注入・formイベントから実controllerと共通dialogへ接続し、未確定POST／ID準備0、対象・画面・カタログ変更の失効、結果不明後の同一bodyText再試行、送信後の再表示排他、表示失敗後の保留維持を観測する。`browser-story-choices`と`browser-save-reset`は実app配線を通し、確認取消・遅延・対象変更で進行／初期化／入力を保つこと、確定の一回性と無通信を確認する。`browser-chat-start-flow`と`browser-participant-change-flow`は巻戻し・候補セッション消去が通知より先であること、通知待ち中の排他、親取消と旧完了が後発操作を変更しないことを観測する。`browser-app-dialogs`の実行用JS／HTML残存検索は標準関数呼出し・別名取得・旧復旧シンボル禁止の補助検査とし、利用先の状態assertの代用にしない。影響規則は関連製品パスの単独変更でも直接接続試験を選ぶ。
 
-- DOMに依存しないブラウザモジュールの状態変換は`node-server/test`から実際に読み込んで挙動を検査する。秘密の純粋検証は`secret-profile.test.js`、編集操作と下書き確定は`browser-secret-profile.test.js`が担当し、チャット要求・プロンプト、候補要求、v23保存、設定v2、登録解除は各責務試験で接続する。中期要約の実行・結果キャッシュは`browser-medium-memory-summary-flow.test.js`が通信回数、requestId、状態確定、手動排他、キャッシュ寿命を担当する。実app配線は会話・編集UI・復元・ロード・初期化の各ブラウザ試験で観測する。中期記憶の編集・順位は`browser-medium-memories.test.js`が実保存イベント、禁止制御文字の無変更、元会話時刻の安定選別、古い失敗再試行後の60往復を担当し、`browser-chat-request.test.js`が次要求の短期履歴と要約順、`browser-save-reset.test.js`が実`save-flow.js`の保存構築、`gameplay-api-integration.test.js`が正規化済み要求のPC側受理、`persistence-integration.test.js`がv23保存・読込・再保存を担当する。会話要求構築は`browser-chat-request.test.js`で実`app.js`の`buildChatRequestPayload()`を抽出し、実`chat-request.js`のbuilderへ接続して次表を確認する。対象関数内部のローカル変数名、オブジェクト組立て順、直接returnか変数経由かは合格条件にしない。
+`browser-audio`はユーザー操作／表示復帰でinterruptedからrunningへ戻る条件と拒否時OFFを維持し、実共通部品の確認・通知の開閉中もON/OFF、希望曲、実曲、再生位置、play/pause/resume回数が不変であることを模擬Audio上で確認する。実音、端末のTab閉じ込め、iPhoneキーボード、狭幅レイアウトは代役試験で保証せず、実機チェックリストA-12/B-03/B-04/E-06/F-13/G-09で別に観測する。`app-dialogs.js`単独変更は専用影響規則で全Node・設定素材・全領域を選び、未知ブラウザ規則と重複しない。
+
+- DOMに依存しないブラウザモジュールの状態変換は`node-server/test`から実際に読み込んで挙動を検査する。秘密の純粋検証は`secret-profile.test.js`、編集操作と下書き確定は`browser-secret-profile.test.js`が担当し、チャット要求・プロンプト、候補要求、v24保存、設定v3、登録解除は各責務試験で接続する。中期要約の実行・結果キャッシュは`browser-medium-memory-summary-flow.test.js`が通信回数、requestId、状態確定、手動排他、キャッシュ寿命を担当する。実app配線は会話・編集UI・復元・ロード・初期化の各ブラウザ試験で観測する。中期記憶の編集・順位は`browser-medium-memories.test.js`が実保存イベント、禁止制御文字の無変更、元会話時刻の安定選別、古い失敗再試行後の60往復を担当し、`browser-chat-request.test.js`が次要求の短期履歴と要約順、`browser-save-reset.test.js`が実`save-flow.js`の保存構築、`gameplay-api-integration.test.js`が正規化済み要求のPC側受理、`persistence-integration.test.js`がv24保存・読込・再保存を担当する。会話要求構築は`browser-chat-request.test.js`で実`app.js`の`buildChatRequestPayload()`を抽出し、実`chat-request.js`のbuilderへ接続して次表を確認する。対象関数内部のローカル変数名、オブジェクト組立て順、直接returnか変数経由かは合格条件にしない。
 - `browser-world-settings.test.js`は実`world-settings.js`と実`state-lifecycle.js`を接続し、削除確定から非同期の後処理完了まで`world-delete`だけが共有操作権を持つこと、競合操作と失敗DELETEがカタログ・開始候補を変えないことを確認する。実`app.js`の組立ても同試験で通し、削除後のチャット候補、開始準備の世界観・世間の出来事、保存済み開始設定の再評価を観測する。`browser-adventure-settings.test.js`は古い一覧を無効化したまま再取得失敗・再試行・明示修正読込を、`browser-chat-start-flow.test.js`は画像準備中に削除された通常チャット開始候補を、`browser-story-choices.test.js`は共有操作権中の物語開始拒否を担当する。
-- `browser-chat-customization-settings.test.js`は初期下書き、開始・保存済み編集下書きに共通する秘密本文の正規化後UTF-16境界と他項目のコードポイント境界、実行中設定v1射影の全人物・両記憶区分と無副作用、利用不能参照の保持と明示修正、F1と同じ入力検証、空入力の開始・保存拒否、厳格画像準備、標準設定を含む一覧選択と明示読込・上書き対象の分離、標準設定のカスタム件数外・変更不可・別名新規保存、プレイ中の読込非表示・標準編集不可・カスタム独立編集、409後の下書き保持と古いPUT停止、取消確認、終了後の遅延GET無視、共通カスタマイズ親画面への配置、人物選択の警告だけの状態表示を担当する。実`app.js`の人物取得・カードでは世界線と開始下書きの値、登録定義不変も確認する。初期背景・立ち絵の専用子画面については、開始下書きと保存カタログからの一時状態分離、複数人物の入力保持、開始背景と全人物見た目の原子的反映、利用不能な既存参照の保持、新たに利用不能となった変更の反映拒否、差分時だけの取消確認を実`app.js`から抽出して確認する。`browser-customization-action-state.test.js`は有効人物投影の4項目、静的素材の保持、入力非変更を確認する。`browser-secret-profile.test.js`は秘密本文の編集履歴が子画面から利用不能参照マージへ渡り、変更後に本文と利用可能人物のチェックを元へ戻しても、編集開始時の利用不能認識を解除する反映が有効になることを担当する。取消では未反映編集を破棄し、利用不能認識がない項目を全て元へ戻した場合は変更なし、本文未編集の認識変更では利用不能ID保持となる対照経路も確認する。`browser-chat-start-flow.test.js`は実フローの公開入口で開始下書きの検証・全項目確定・失敗復元・取消・共有操作権・古い完了と実`app.js`の接続を確認する。`browser-save-reset.test.js`は新フローの成功結果からv23保存投影への接続を、`browser-save-load.test.js`はロード失敗復元後にホーム人物選択で初期下書きを作る開始を確認する。カタログAPIの構造・正副保存・CRUD・仮想標準設定は`chat-customization-settings.test.js`を正本とし、ブラウザ試験では本番保存先を使わない。
-- P1の手入力確定では、`browser-important-memory-state.test.js`が実追加・編集イベントから記憶のコードポイント境界と拒否時のdraft／正本を、`browser-customization-action-state.test.js`が出来事のUTF-16境界と人物8欄の全人物検証を観測する。`browser-chat-customization-settings.test.js`は共用画面の反映先、`gameplay-api-integration.test.js`は確定値が実要求・デモAPI・v23保存読込・設定カタログへ届く接続を観測する。これらは手入力の確定境界の保証であり、自動記憶更新や既存データの一括修復は対象にしない。
-- `browser-asset-restrictions.test.js`は実`asset-restriction-flow.js`の公開`applyChanges()`で検証・取消・中心画像失敗時復元・追加画像だけの部分成功・二重開始・失効を確認し、画面controllerの入力保持と実`app.js`の生成・同一操作調整器・実行中入口への配線を別に確認する。人物選択肢は実`app.js`の有効人物取得とcontroller配線を使い、実行中世界線・開始下書き・保存済み編集下書きの表示名、登録IDと登録名の不変を確認する。`persistence-integration.test.js`は同じ公開フローから開始設定修復後の物語開始・v23保存への接続を確認する。`test-impact-map.js`は`asset-restrictions.js`と`asset-restriction-flow.js`を同じ人物・保存状態領域へ分類し、直接試験を選ぶ。
+- `browser-settings-confirmations.test.js`は実appの共有メモリ3controllerと実共通ダイアログの接続で、確認前の通信・dirty・最新1往復無効化0、取消保持、対象改変・文脈変更・親再開始・種類往復の失効、最新別項目と下書き保持、入力10分類、失敗バッチの元会話だけの除去、再要約の確定直後の再照合を確認する。各設定の既存browser試験は編集5種、実appの独立編集親終了、カタログの固定対象・revision、dialog外の開始設定確認、実appの素材確認と操作所有者を担当する。test-impact-mapは移行対象13パスの単独変更でも新接続試験を選ぶ。可聴音と物理iPhoneのキーボード・表示は実機確認へ残す。
+- `browser-chat-customization-settings.test.js`は初期下書き、開始・保存済み編集下書きに共通する秘密本文の正規化後UTF-16境界と他項目のコードポイント境界、実行中設定v1射影の全人物・両記憶区分と無副作用、利用不能参照の保持と明示修正、F1と同じ入力検証、空入力の開始・保存拒否、厳格画像準備、標準設定を含む一覧選択と明示読込・上書き対象の分離、標準設定のカスタム件数外・変更不可・別名新規保存、プレイ中の読込非表示・標準編集不可・カスタム独立編集、409後の下書き保持と古いPUT停止、取消確認、終了後の遅延GET無視、共通カスタマイズ親画面への配置、人物選択の警告だけの状態表示を担当する。実`app.js`の人物取得・カードでは世界線と開始下書きの値、登録定義不変も確認する。初期背景・立ち絵の専用子画面については、開始下書きと保存カタログからの一時状態分離、複数人物の入力保持、開始背景と全人物見た目の原子的反映、利用不能な既存参照の保持、新たに利用不能となった変更の反映拒否、差分時だけの取消確認を実`app.js`から抽出して確認する。`browser-customization-action-state.test.js`は有効人物投影の4項目、静的素材の保持、入力非変更を確認する。`browser-secret-profile.test.js`は秘密本文の編集履歴が子画面から利用不能参照マージへ渡り、変更後に本文と利用可能人物のチェックを元へ戻しても、編集開始時の利用不能認識を解除する反映が有効になることを担当する。取消では未反映編集を破棄し、利用不能認識がない項目を全て元へ戻した場合は変更なし、本文未編集の認識変更では利用不能ID保持となる対照経路も確認する。`browser-chat-start-flow.test.js`は実フローの公開入口で開始下書きの検証・全項目確定・失敗復元・取消・共有操作権・古い完了と実`app.js`の接続を確認する。`browser-save-reset.test.js`は新フローの成功結果からv24保存投影への接続を、`browser-save-load.test.js`はロード失敗復元後にホーム人物選択で初期下書きを作る開始を確認する。カタログAPIの構造・正副保存・CRUD・仮想標準設定は`chat-customization-settings.test.js`を正本とし、ブラウザ試験では本番保存先を使わない。
+- P1の手入力確定では、`browser-important-memory-state.test.js`が実追加・編集イベントから記憶のコードポイント境界と拒否時のdraft／正本を、`browser-customization-action-state.test.js`が出来事のUTF-16境界と人物8欄の全人物検証を観測する。`browser-chat-customization-settings.test.js`は共用画面の反映先、`gameplay-api-integration.test.js`は確定値が実要求・デモAPI・v24保存読込・設定カタログへ届く接続を観測する。これらは手入力の確定境界の保証であり、自動記憶更新や既存データの一括修復は対象にしない。
+- `browser-asset-restrictions.test.js`は実`asset-restriction-flow.js`の公開`applyChanges()`で検証・取消・中心画像失敗時復元・追加画像だけの部分成功・二重開始・失効を確認し、画面controllerの入力保持と実`app.js`の生成・同一操作調整器・実行中入口への配線を別に確認する。人物選択肢は実`app.js`の有効人物取得とcontroller配線を使い、実行中世界線・開始下書き・保存済み編集下書きの表示名、登録IDと登録名の不変を確認する。`persistence-integration.test.js`は同じ公開フローから開始設定修復後の物語開始・v24保存への接続を確認する。`test-impact-map.js`は`asset-restrictions.js`と`asset-restriction-flow.js`を同じ人物・保存状態領域へ分類し、直接試験を選ぶ。
 - `browser-participant-change-flow.test.js`は実`participant-change-flow.js`の公開入口で中心人物変更、主・追加人物交代、追加・変更・明示退場、準備・画像適用失敗の復元、部分成功、共通操作権、取消・遅延完了、成功時だけの最新1往復無効化と未保存化を確認する。実`index.html`と`app.js`の読込順、controller生成時の初期化順、同一操作調整器、プレイ中入口とイベントも別に確認する。`browser-save-load.test.js`は実フローから追加人物変更を開始して保存ロードの共有操作権を確認し、`browser-save-reset.test.js`は新規開始後の保存投影を確認する。`participant-change-flow.js`単独変更の影響規則はこの三試験を選び、未知パスの完全フォールバックへ分類しない。
 
 | 会話要求の契約 | 恒久動作assert |
@@ -377,7 +383,7 @@ CSSの読込順異常は実入口で拒否させ、CSSファイル欠落と空�
 - 変更前後は`git -C <project-root> status --short --branch`で対象リポジトリと差分を確認する。役割分担を使う変更では、検査済みの実装と恒久資料だけをレビュー候補として個別にステージし、`git diff --cached`をレビュー対象の正本とする。承認と必要な実機・外部確認後に調整文書を閉じ、承認済みtree IDを使う最終化検査に合格してから、結果の分かる日本語の要約で1作業1コミットを作成する。未完了、調査だけ、実機確認だけが残る作業はコミットしない。担当の責任と状態遷移は`作業用/担当別指示/計画・差分レビュー担当.md`と`作業用/担当別指示/実装担当.md`を正本とする。
 - Git導入後の時系列的な変更記録はコミットを正本とする。現役資料には現在の仕様だけを置き、旧値や日付付き経緯を追記しない。導入前の経緯は`作業用/記録/Git導入前の主要変更履歴.md`に凍結し、必要な場合だけ対象パスを限定した`git log`、`git show`、`git blame`または同資料で確認する。
 - `git reset --hard`、`git clean`、既存差分への`checkout --`・`restore`は禁止し、必要な場合は対象と回復不能性を説明してユーザーの明示承認を得る。remote追加、fetch、pull、push、公開サービス連携も明示承認が必要。
-- Gitはローカル変更履歴であり、ユーザーのZIPバックアップを置き換えない。除外済みのセーブ、生成画像、診断ログ等はGitから復元できない。
+- Gitはローカル変更履歴であり、PCの故障・紛失からデータを保護するものではない。除外済みのセーブ、生成画像、診断ログ等はGitから復元できない。
 
 ### レビュー候補の定型検査
 
